@@ -6,7 +6,7 @@ const logMessage = require('../utils/commands/logMessage');
 const { NO_LOG } = require('../constants');
 const { COMMAND_MATCH_IMAGE_SNAPSHOT: commandName } = require('./commandNames');
 const getImageData = require('../utils/image/getImageData');
-const { getImageConfig, getScreenshotConfig, getCustomName, getCustomSeparator } = require('../config');
+const { getImageConfig, getCustomName, getCustomSeparator } = require('../config');
 
 function afterScreenshot(taskData) {
   return ($el, props) => {
@@ -23,6 +23,8 @@ async function toMatchImageSnapshot(subject, commandOptions) {
   const options = getImageConfig(commandOptions);
   const customName = getCustomName(commandOptions);
   const customSeparator = getCustomSeparator(commandOptions);
+  const options = commandOptions.imageConfig;
+  const customName = commandOptions.name;
 
   const taskData = await getTaskData({
     commandName,
@@ -30,16 +32,17 @@ async function toMatchImageSnapshot(subject, commandOptions) {
     customName,
     customSeparator,
     subject,
+    subject
   });
 
-  const screenShotConfig = getScreenshotConfig(commandOptions);
+  const screenShotConfig = commandOptions.screenshotConfig;
   const afterScreenshotFn = afterScreenshot(taskData);
   if (screenShotConfig.onAfterScreenshot) {
     const afterScreenshotCallback = screenShotConfig.onAfterScreenshot;
     screenShotConfig.onAfterScreenshot = (...args) => {
       afterScreenshotFn.apply(this, args);
       afterScreenshotCallback.apply(this, args);
-    }
+    };
   } else {
     screenShotConfig.onAfterScreenshot = afterScreenshotFn;
   }
@@ -47,11 +50,10 @@ async function toMatchImageSnapshot(subject, commandOptions) {
   return cy.wrap(subject, NO_LOG)
     .screenshot(taskData.snapshotTitle, screenShotConfig)
     .then(() => cy.task(
-        MATCH_IMAGE,
-        taskData,
-        NO_LOG
-      ).then(logMessage)
-    );
+      MATCH_IMAGE,
+      taskData,
+      NO_LOG
+    ).then(logMessage));
 }
 
 module.exports = toMatchImageSnapshot;
